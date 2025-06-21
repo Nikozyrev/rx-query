@@ -1,0 +1,13 @@
+<div class="controls">
+  <button (click)="show1.set(!show1())">Toggle 1</button>
+  <button (click)="show2.set(!show2())">Toggle 2</button>
+</div>
+
+<div class="container">
+  @if (show1()) {
+    <app-comp-one />
+  }
+  @if (show2()) {
+    <app-comp-two />
+  }
+</div>

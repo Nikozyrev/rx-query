@@ -1,0 +1,11 @@
+.container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.controls {
+  padding: 1rem;
+  display: flex;
+  gap: 1rem;
+}
