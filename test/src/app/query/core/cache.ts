@@ -2,21 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, Subject, ReplaySubject, merge } from 'rxjs';
 import { scan, startWith, tap, shareReplay, mergeAll } from 'rxjs/operators';
 import { CacheAction, CacheEntry } from './types';
-
-const KEY_DELIMITER = '::';
-
-/** Генерирует уникальный ключ на основе базового ключа и (опционально) параметров */
-export function generateCacheKey(keys: string[]): string {
-  return keys.join(KEY_DELIMITER);
-}
-
-export function generateCacheKeyArray(keys: unknown[]): string[] {
-  return keys.map((key) => `${JSON.stringify(key)}`);
-}
-
-export function generateFinalKey(keys: unknown[]): string {
-  return generateCacheKey(generateCacheKeyArray(keys));
-}
+import { generateCacheKey, generateCacheKeyArray, splitKey } from './keys';
 
 @Injectable({ providedIn: 'root' })
 export class QueryCacheStore {
@@ -56,7 +42,7 @@ export class QueryCacheStore {
         case 'INVALIDATE':
           const keys = Array.from(cache.keys());
           keys.forEach((key) => {
-            const parts = key.split(KEY_DELIMITER);
+            const parts = splitKey(key);
             action.key.every((part) => parts.includes(part)) &&
               newCache.delete(key);
           });

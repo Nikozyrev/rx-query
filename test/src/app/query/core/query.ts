@@ -16,9 +16,9 @@ import {
   distinctUntilKeyChanged,
   finalize,
 } from 'rxjs/operators';
-import { generateCacheKeyArray, generateFinalKey, QueryCacheStore } from './cache';
+import { QueryCacheStore } from './cache';
 import { RequestState, CacheAction } from './types';
-
+import { generateCacheKeyArray, generateStoreKey } from './keys';
 
 type CreateQueryParams<T, R> = {
   baseKey: string;
@@ -40,7 +40,7 @@ export function createQuery<T, R>({
   const paramsWithKey$ = finalParams$.pipe(
     map((params) => ({
       params,
-      key: generateFinalKey([baseKey, params]),
+      key: generateStoreKey([baseKey, params]),
     })),
     distinctUntilKeyChanged('key'),
     shareReplay({ bufferSize: 1, refCount: true }),
