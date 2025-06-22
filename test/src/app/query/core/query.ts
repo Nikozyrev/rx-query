@@ -20,28 +20,31 @@ import { QueryCacheStore } from './cache';
 import { RequestState, CacheAction } from './types';
 import { generateCacheKeyArray, generateStoreKey } from './keys';
 
-type CreateQueryParams<T, R> = {
-  baseKey: string;
-  params$?: Observable<T>;
-  fetchFn: (params: T) => Observable<R>;
+type UnwrapValue<T> = T extends Observable<infer U> ? U : T;
+
+type UnwrapObservables<T extends readonly [...any]> = {
+  [K in keyof T]: UnwrapValue<T[K]>;
+};
+
+type CreateQueryParams<Key extends readonly [...any], R> = {
+  key: readonly [...Key];
+  fetchFn: (params: UnwrapObservables<Key>) => Observable<R>;
   ttl?: number;
 };
 
-export function createQuery<T, R>({
-  baseKey,
-  params$,
+export function createQuery<Key extends [...any], R>({
+  key,
   fetchFn,
   ttl = 300000, // TTL по умолчанию 5 минут
-}: CreateQueryParams<T, R>): Observable<RequestState<R>> {
+}: CreateQueryParams<Key, R>): Observable<RequestState<R>> {
   const cacheStore = inject(QueryCacheStore);
 
-  const finalParams$ = params$ ?? of(undefined as unknown as T);
+  const params$ = combineLatest(
+    key.map((v) => ((v as unknown) instanceof Observable ? v : of(v)))
+  ) as Observable<UnwrapObservables<Key>>;
 
-  const paramsWithKey$ = finalParams$.pipe(
-    map((params) => ({
-      params,
-      key: generateStoreKey([baseKey, params]),
-    })),
+  const paramsWithKey$ = params$.pipe(
+    map((params) => ({ params, key: generateStoreKey(params as unknown[]) })),
     distinctUntilKeyChanged('key'),
     shareReplay({ bufferSize: 1, refCount: true }),
     tap({
@@ -57,19 +60,19 @@ export function createQuery<T, R>({
     )
   );
 
-  const refreshSubject$ = new ReplaySubject<T>();
+  const refreshSubject$ = new ReplaySubject<UnwrapObservables<Key>>();
   const refreshEffect$ = refreshSubject$.pipe(
     switchMap((params) =>
       fetchFn(params).pipe(
         map(
           (payload): CacheAction<R> => ({
             type: 'UPDATE',
-            key: generateCacheKeyArray([baseKey, params]),
+            key: generateCacheKeyArray(params as unknown[]),
             payload,
             timestamp: Date.now(),
           })
         ),
-        catchError((err) => EMPTY),
+        catchError((err) => EMPTY)
       )
     ),
     tap({
@@ -77,7 +80,7 @@ export function createQuery<T, R>({
     })
   );
 
-  cacheStore.registerEffect(baseKey, refreshEffect$);
+  cacheStore.registerEffect(refreshEffect$);
 
   return entry$.pipe(
     map(({ params, entry }): RequestState<R> => {
@@ -95,4 +98,3 @@ export function createQuery<T, R>({
     finalize(() => (console.log('finalize'), refreshSubject$.complete()))
   );
 }
-

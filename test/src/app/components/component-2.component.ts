@@ -9,7 +9,7 @@ import { BehaviorSubject, map, tap } from 'rxjs';
   standalone: true,
   imports: [AsyncPipe],
   template: ` <div class="list">
-    @if (todos | async; as todos) {
+    @if (todos$ | async; as todos) {
     <div class="buttons">
       <button (click)="prevPage()">Prev</button>
       <button (click)="nextPage()">Next</button>
@@ -48,12 +48,11 @@ export class Comp2Component {
     map((page): TodosParams => ({ limit: 10, skip: page * 10 }))
   );
 
-  public todos = createQuery({
-    baseKey: 'todos',
-    params$: this.params$,
-    fetchFn: (params) =>
+  public todos$ = createQuery({
+    key: ['todos', this.params$] as const,
+    fetchFn: ([, params]) =>
       this.http.get<TodosResponse>('https://dummyjson.com/todos', { params }),
-  }).pipe(tap(console.log));
+  }).pipe(tap((v) => console.log(v)));
 
   public invalidate(): void {
     this.cache.clear();

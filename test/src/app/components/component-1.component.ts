@@ -50,16 +50,15 @@ export class Comp1Component {
   );
 
   public todos$ = createQuery({
-    baseKey: 'todos',
-    params$: this.params$,
-    fetchFn: (params) =>
+    key: ['todos', this.params$],
+    fetchFn: ([, params]) =>
       this.http.get<TodosResponse>('https://dummyjson.com/todos', { params }),
-  }).pipe(tap(console.log));
+  }).pipe(tap((v) => console.log(v)));
 
   public todos = toSignal(this.todos$);
 
   public invalidate(): void {
-    this.cache.invalidate(['todos']);
+    this.cache.invalidate(['todos', { limit: 10, skip: 0 }]);
   }
 
   public nextPage(): void {

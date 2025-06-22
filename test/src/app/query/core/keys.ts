@@ -81,16 +81,15 @@ function canonicalizeJson(value: unknown): string {
 
 const KEY_DELIMITER = '::';
 
-/** Генерирует уникальный ключ на основе базового ключа и (опционально) параметров */
 export function generateCacheKey(keys: string[]): string {
   return keys.join(KEY_DELIMITER);
 }
 
-export function generateCacheKeyArray(keys: unknown[]): string[] {
+export function generateCacheKeyArray(keys: readonly unknown[]): string[] {
   return keys.map((key) => `${createUniqueKey(key)}`);
 }
 
-export function generateStoreKey(keys: unknown[]): string {
+export function generateStoreKey(keys: readonly unknown[]): string {
   return generateCacheKey(generateCacheKeyArray(keys));
 }
 

@@ -62,10 +62,7 @@ export class QueryCacheStore {
    * Если для данного ключа уже активен эффект, новый регистрироваться не будет.
    * После завершения (или ошибки) эффект удаляется из карты activeEffects.
    */
-  public registerEffect(
-    key: string,
-    effect$: Observable<CacheAction<any>>
-  ): void {
+  public registerEffect(effect$: Observable<CacheAction<any>>): void {
     // const hasEffect = this.activeEffects.has(key);
     // if (hasEffect) return;
     // this.activeEffects.set(key, effect$);
