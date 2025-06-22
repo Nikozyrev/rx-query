@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { createQuery, QueryCacheStore } from '../query/redux-like';
+import { createQuery, QueryCacheStore } from '../query/core';
 import { AsyncPipe } from '@angular/common';
 import { BehaviorSubject, map, tap } from 'rxjs';
 
