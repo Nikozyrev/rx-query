@@ -12,6 +12,6 @@ import { Comp2Component } from "./components/component-2.component";
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent {
-  public show1 = signal(true);
+  public show1 = signal(false);
   public show2 = signal(true);
 }

@@ -10,6 +10,7 @@ import { BehaviorSubject, map, tap } from 'rxjs';
   standalone: true,
   imports: [AsyncPipe],
   template: ` <div class="list">
+    <h2>1</h2>
     @if (todos$ | async; as todos) {
     <div class="buttons">
       <button (click)="prevPage()">Prev</button>
