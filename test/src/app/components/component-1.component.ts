@@ -1,9 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { createQuery, QueryCacheStore } from '../query/core';
 import { AsyncPipe } from '@angular/common';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, map, tap } from 'rxjs';
+import { RxQuery } from '../query/angular';
 
 @Component({
   selector: 'app-comp-one',
@@ -43,14 +43,14 @@ import { BehaviorSubject, map, tap } from 'rxjs';
 })
 export class Comp1Component {
   private http = inject(HttpClient);
-  private cache = inject(QueryCacheStore);
+  private rxQuery = inject(RxQuery);
 
   public page$ = new BehaviorSubject<number>(0);
   public params$ = this.page$.pipe(
     map((page): TodosParams => ({ limit: 10, skip: page * 10 }))
   );
 
-  public todos$ = createQuery({
+  public todos$ = this.rxQuery.createQuery({
     key: ['todos', this.params$],
     fetchFn: ([, params]) =>
       this.http.get<TodosResponse>('https://dummyjson.com/todos', { params }),
@@ -59,7 +59,7 @@ export class Comp1Component {
   public todos = toSignal(this.todos$);
 
   public invalidate(): void {
-    this.cache.invalidate(['todos', { limit: 10, skip: 0 }]);
+    this.rxQuery.invalidate(['todos', { limit: 10, skip: 0 }]);
   }
 
   public nextPage(): void {

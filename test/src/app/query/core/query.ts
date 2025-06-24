@@ -1,4 +1,3 @@
-import { inject } from '@angular/core';
 import {
   Observable,
   of,
@@ -16,19 +15,19 @@ import {
   tap,
   finalize,
 } from 'rxjs/operators';
-import { QueryCacheStore } from './cache';
+import { QueryClient } from './cache';
 import { RequestState, CacheAction } from './types';
 import { generateCacheKeyArray, generateStoreKey } from './keys';
 import { takeUntilCompleted } from './utils';
 
-type QueryParams<Key extends [...any], R> = {
+type QueryParams<Key extends readonly [...any], R> = {
+  client: QueryClient;
   key: readonly [...Key];
   ttl?: number;
-  client: QueryCacheStore;
   fetchFn: (params: readonly [...Key]) => Observable<R>;
 };
 
-export function query<Key extends [...any], R>({
+export function query<Key extends readonly [...any], R>({
   client,
   key,
   fetchFn,
@@ -36,8 +35,8 @@ export function query<Key extends [...any], R>({
 }: QueryParams<Key, R>): Observable<RequestState<R>> {
   const storeKey = generateStoreKey(key);
 
-  const entry$ = client.cache$.pipe(
-    map((cache) => cache.get(storeKey)),
+  const entry$ = client.store$.pipe(
+    map((store) => store.get(storeKey)),
     distinctUntilChanged()
   );
 
@@ -77,11 +76,11 @@ export function query<Key extends [...any], R>({
   );
 }
 
-export const toQuery = <Key extends [...any], Params, R>(
+export const toQuery = <Key extends readonly [...any], Params, R>(
   getQueryParams: (params: Params) => QueryParams<Key, R>
 ) =>
   pipe(
-    switchMap((params: Params) => query(getQueryParams(params))),
+    switchMap((params: Params) => query<Key, R>(getQueryParams(params))),
     shareReplay({ bufferSize: 1, refCount: true })
   );
 
@@ -91,26 +90,26 @@ type UnwrapObservables<T extends readonly [...any]> = {
   [K in keyof T]: UnwrapValue<T[K]>;
 };
 
-type CreateQueryParams<Key extends readonly [...any], R> = {
+export type CreateQueryParams<Key extends readonly [...any], R> = {
+  client: QueryClient;
   key: readonly [...Key];
   fetchFn: (params: readonly [...UnwrapObservables<Key>]) => Observable<R>;
   ttl?: number;
 };
 
-export function createQuery<Key extends [...any], R>({
+export function createQuery<Key extends readonly [...any], R>({
+  client,
   key,
   fetchFn,
   ttl = 300000, // TTL по умолчанию 5 минут
 }: CreateQueryParams<Key, R>): Observable<RequestState<R>> {
-  const cacheStore = inject(QueryCacheStore);
-
   const params$ = combineLatest(
     key.map((v) => ((v as unknown) instanceof Observable ? v : of(v)))
   ) as Observable<UnwrapObservables<Key>>;
 
   return params$.pipe(
     toQuery<UnwrapObservables<Key>, UnwrapObservables<Key>, R>((key) => ({
-      client: cacheStore,
+      client,
       key,
       fetchFn,
       ttl,

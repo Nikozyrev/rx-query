@@ -1,9 +1,10 @@
 import { Component, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { createQuery, query, QueryCacheStore, toQuery } from '../query/core';
+import { toQuery } from '../query/core';
 import { AsyncPipe } from '@angular/common';
-import { BehaviorSubject, map, shareReplay, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, map, tap } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { RxQuery } from '../query/angular';
 
 @Component({
   selector: 'app-comp-two',
@@ -43,7 +44,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 })
 export class Comp2Component {
   private http = inject(HttpClient);
-  private cache = inject(QueryCacheStore);
+  private rxQuery = inject(RxQuery);
 
   public page$ = new BehaviorSubject<number>(0);
   public params$ = this.page$.pipe(
@@ -52,7 +53,7 @@ export class Comp2Component {
 
   public todos$ = this.params$.pipe(
     toQuery((params) => ({
-      client: this.cache,
+      client: this.rxQuery.client,
       key: ['todos', params],
       fetchFn: () =>
         this.http.get<TodosResponse>('https://dummyjson.com/todos', {
@@ -65,7 +66,7 @@ export class Comp2Component {
   public todos = toSignal(this.todos$);
 
   public invalidate(): void {
-    this.cache.clear();
+    this.rxQuery.clear();
   }
 
   public nextPage(): void {
