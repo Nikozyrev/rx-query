@@ -1,4 +1,5 @@
-import { Observable, OperatorFunction } from 'rxjs';
+import { Observable, of, OperatorFunction } from 'rxjs';
+import { MaybeObservable } from './types';
 
 /**
  * takeUntilCompleted – оператор, который подписывается на source и notifier.
@@ -34,3 +35,6 @@ export function takeUntilCompleted<T>(
       };
     });
 }
+
+export const convertToObservableIfNotObservable = <T>(v: MaybeObservable<T>) =>
+  v instanceof Observable ? v : of(v);

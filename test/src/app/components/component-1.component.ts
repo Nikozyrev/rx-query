@@ -11,6 +11,7 @@ import { RxQuery } from '../query/angular';
   imports: [AsyncPipe],
   template: ` <div class="list">
     <h2>1</h2>
+    <div>Active effects: {{ active$ | async }}</div>
     @if (todos$ | async; as todos) {
     <div class="buttons">
       <button (click)="prevPage()">Prev</button>
@@ -44,6 +45,8 @@ import { RxQuery } from '../query/angular';
 export class Comp1Component {
   private http = inject(HttpClient);
   private rxQuery = inject(RxQuery);
+
+  public active$ = this.rxQuery.activeEffects$;
 
   public page$ = new BehaviorSubject<number>(0);
   public params$ = this.page$.pipe(

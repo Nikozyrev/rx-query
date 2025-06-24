@@ -1,6 +1,5 @@
 import {
   Observable,
-  of,
   combineLatest,
   ReplaySubject,
   EMPTY,
@@ -16,9 +15,9 @@ import {
   finalize,
 } from 'rxjs/operators';
 import { QueryClient } from './cache';
-import { RequestState, CacheAction } from './types';
+import { RequestState, CacheAction, MaybeObservablesTuple } from './types';
 import { generateCacheKeyArray, generateStoreKey } from './keys';
-import { takeUntilCompleted } from './utils';
+import { convertToObservableIfNotObservable, takeUntilCompleted } from './utils';
 
 type QueryParams<Key extends readonly [...any], R> = {
   client: QueryClient;
@@ -66,7 +65,8 @@ export function query<Key extends readonly [...any], R>({
           takeUntilCompleted(complete$)
         );
 
-        client.registerEffect(refreshEffect$);
+        client.registerEffect(refreshEffect$)
+        // setTimeout(() => );
 
         return { loading: true };
       }
@@ -84,31 +84,25 @@ export const toQuery = <Key extends readonly [...any], Params, R>(
     shareReplay({ bufferSize: 1, refCount: true })
   );
 
-type UnwrapValue<T> = T extends Observable<infer U> ? U : T;
-
-type UnwrapObservables<T extends readonly [...any]> = {
-  [K in keyof T]: UnwrapValue<T[K]>;
-};
-
 export type CreateQueryParams<Key extends readonly [...any], R> = {
   client: QueryClient;
-  key: readonly [...Key];
-  fetchFn: (params: readonly [...UnwrapObservables<Key>]) => Observable<R>;
+  key: readonly [...MaybeObservablesTuple<Key>];
+  fetchFn: (params: readonly [...Key]) => Observable<R>;
   ttl?: number;
 };
 
-export function createQuery<Key extends readonly [...any], R>({
+export function createQuery<Key extends readonly any[], R>({
   client,
   key,
   fetchFn,
   ttl = 300000, // TTL по умолчанию 5 минут
 }: CreateQueryParams<Key, R>): Observable<RequestState<R>> {
   const params$ = combineLatest(
-    key.map((v) => ((v as unknown) instanceof Observable ? v : of(v)))
-  ) as Observable<UnwrapObservables<Key>>;
+    key.map(convertToObservableIfNotObservable)
+  ) as unknown as Observable<Key>;
 
   return params$.pipe(
-    toQuery<UnwrapObservables<Key>, UnwrapObservables<Key>, R>((key) => ({
+    toQuery<Key, Key, R>((key) => ({
       client,
       key,
       fetchFn,

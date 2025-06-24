@@ -16,6 +16,8 @@ type QueryParams<Key extends readonly [...any], R> = Omit<
 export class RxQuery {
   public readonly client = createQueryClient();
 
+  public readonly activeEffects$ = this.client.activeEffects$;
+
   public createQuery<Key extends readonly [...any], R>(
     params: QueryParams<Key, R>
   ) {

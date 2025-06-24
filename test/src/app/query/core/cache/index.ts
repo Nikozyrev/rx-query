@@ -7,6 +7,7 @@ import { cacheReducer } from './reducer';
 
 export type QueryClient = {
   store$: Observable<Map<string, CacheEntry<any>>>;
+  activeEffects$: Observable<number>;
   update: <R>(key: string[], payload: R) => void;
   invalidate: (keys: unknown[]) => void;
   clear: () => void;
@@ -15,7 +16,7 @@ export type QueryClient = {
 
 export const createQueryClient = (): QueryClient => {
   const { actions$, invalidate, update, clear } = createActions();
-  const { effects$, registerEffect } = createEffects();
+  const { effects$, activeEffects$, registerEffect } = createEffects();
 
   const store$: Observable<Map<string, CacheEntry<any>>> = merge(
     actions$,
@@ -29,6 +30,7 @@ export const createQueryClient = (): QueryClient => {
 
   return {
     store$,
+    activeEffects$,
     update,
     invalidate,
     clear,
